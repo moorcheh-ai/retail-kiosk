@@ -1,0 +1,204 @@
+{
+  "store": {
+    "name": "The Brew Corner",
+    "tagline": "Neighborhood café & mini-market"
+  },
+  "prompts": {
+    "header_prompt": "You are the friendly in-store voice assistant at The Brew Corner. Answer naturally using ONLY provided context. The customer is on-site; never provide our address, phone, website, or directions. If info is missing, politely say you don't know and suggest asking counter staff.",
+    "footer_prompt": "Provide a brief, natural spoken response based ONLY on the context. Include prices if mentioned. No address, contact info, markdown, lists, or citations."
+  },
+  "voice": {
+    "holding_enabled": true
+  },
+  "documents": [
+    {
+      "doc_id": "store-hours-location",
+      "category": "store-info",
+      "title": "Store hours",
+      "tags": ["hours", "open", "close"],
+      "text": "This kiosk is inside The Brew Corner. Customers asking here are already in the store.\n\nStore hours: Monday–Friday 6:30 AM – 8:00 PM; Saturday 7:00 AM – 9:00 PM; Sunday 7:00 AM – 6:00 PM. The espresso bar opens at 6:30 AM every day.\n\nIf the store is open now, staff at the counter can help with anything not covered here. The kiosk does not provide street address, phone numbers, or driving directions."
+    },
+    {
+      "doc_id": "coffee-menu",
+      "category": "menu",
+      "title": "Coffee and espresso menu",
+      "tags": ["coffee", "espresso", "latte", "prices", "menu"],
+      "text": "All espresso drinks use our house blend, Riverside Roast, or decaf Mountain Mist.\n\nHot drinks (12 oz): Drip coffee $2.75, Americano $3.25, Latte $4.50, Cappuccino $4.50, Mocha $5.00, Flat white $4.75, Cortado $3.95.\n\nIced drinks (16 oz): Iced latte $5.25, Iced mocha $5.75, Cold brew $4.50, Iced Americano $3.75.\n\nExtra espresso shot $0.75. Oat milk, almond milk, or soy milk $0.60. Vanilla, caramel, or hazelnut syrup $0.50.\n\nWe do not offer whipped cream on hot drinks. Decaf is available for all espresso beverages."
+    },
+    {
+      "doc_id": "tea-and-other-drinks",
+      "category": "menu",
+      "title": "Tea, chai, and non-coffee drinks",
+      "tags": ["tea", "chai", "hot-chocolate", "menu"],
+      "text": "Hot tea (12 oz): English breakfast, green sencha, chamomile, peppermint, or Earl Grey — $3.25 each. Refills on hot tea are $1.00.\n\nChai latte (12 oz) $4.75; iced chai (16 oz) $5.25.\n\nHot chocolate (12 oz) $4.25, made with whole milk. Iced matcha latte (16 oz) $5.50.\n\nFresh-squeezed orange juice (12 oz) $4.00, available until 11 AM daily.\n\nSparkling water (500 ml) $2.50; still water (500 ml) $2.00."
+    },
+    {
+      "doc_id": "bakery-pastries",
+      "category": "menu",
+      "title": "Bakery and pastries",
+      "tags": ["bakery", "pastries", "muffins", "sandwiches"],
+      "text": "Baked fresh every morning by Riverside Oven Co.\n\nPastries: Butter croissant $3.50, chocolate croissant $4.00, blueberry muffin $3.75, banana nut muffin $3.75, cinnamon roll $4.25.\n\nSavory: Egg and cheddar breakfast sandwich on brioche $6.50 ( served until 11 AM ). Turkey and Swiss panini $8.95. Grilled cheese $6.25.\n\nGluten-free almond flour brownie $4.50 ( kept in sealed container; ask staff ).\n\nDay-old pastries are 50% off after 5 PM while supplies last."
+    },
+    {
+      "doc_id": "grocery-staples",
+      "category": "products",
+      "title": "Grocery staples and mini-market items",
+      "tags": ["grocery", "milk", "eggs", "bread", "snacks"],
+      "text": "The Brew Corner mini-market aisle stocks everyday essentials.\n\nDairy: Whole milk half-gallon $3.49, oat milk half-gallon $4.99, large eggs dozen $4.29, salted butter 8 oz $4.79.\n\nBread: Sourdough loaf $5.50, whole wheat loaf $4.95.\n\nSnacks: Local honey 8 oz jar $9.50, mixed nuts 6 oz $6.25, granola bars 5-pack $5.99.\n\nPantry: Riverside Roast whole beans 12 oz $14.00, Riverside Roast ground 12 oz $13.00, paper filters 100-count $3.25.\n\nWe restock grocery items Tuesday and Friday mornings."
+    },
+    {
+      "doc_id": "return-refund-policy",
+      "category": "policy",
+      "title": "Returns and refunds",
+      "tags": ["returns", "refunds", "receipt", "policy"],
+      "text": "Prepared drinks and food items cannot be returned once served unless there was a preparation error ( wrong drink, spoiled item ). Tell staff immediately and we will remake the item or refund the purchase.\n\nUnopened packaged grocery items may be returned within 7 days with a receipt for a full refund to the original payment method.\n\nOpened packaged goods, perishables, and sale items marked final sale are not eligible for return.\n\nWithout a receipt, we can offer store credit up to $20 at the manager's discretion.\n\nFor gift card balance questions, ask a staff member at the counter."
+    },
+    {
+      "doc_id": "loyalty-program",
+      "category": "policy",
+      "title": "Brew Corner Rewards loyalty program",
+      "tags": ["loyalty", "rewards", "points", "app"],
+      "text": "Brew Corner Rewards is free to join at the counter or via the Brew Corner app.\n\nEarn 1 point per $1 spent on drinks, food, and grocery items. Every 50 points earns a $5 reward toward any purchase.\n\nBirthday reward: free pastry with any drink purchase during your birthday week ( show ID ).\n\nDouble points every Wednesday on drip coffee and tea.\n\nPoints expire after 12 months of account inactivity. Rewards cannot be combined with other coupons."
+    },
+    {
+      "doc_id": "food-allergens",
+      "category": "faq",
+      "title": "Allergens and dietary information",
+      "tags": ["allergens", "gluten", "dairy", "nuts", "vegan"],
+      "text": "Common allergens in our kitchen include milk, eggs, wheat, tree nuts, and soy. Cross-contact is possible; we are not an allergen-free facility.\n\nOat, almond, and soy milk are available for coffee drinks. None are certified gluten-free.\n\nVegan options: drip coffee, Americano, most teas, iced matcha with oat milk, grilled vegetable panini ( no cheese, ask staff ).\n\nGluten-free: only the packaged almond flour brownie is labeled gluten-free.\n\nNut-free: peppermint tea and plain drip coffee contain no added nuts, but cross-contact may occur.\n\nFull ingredient binders are available at the counter on request."
+    },
+    {
+      "doc_id": "checkout-payment",
+      "category": "faq",
+      "title": "Checkout, payment, and Wi‑Fi",
+      "tags": ["payment", "wifi", "checkout", "tips"],
+      "text": "We accept cash, Visa, Mastercard, American Express, Apple Pay, Google Pay, and Brew Corner gift cards.\n\nMinimum card purchase is $1.00. Tips are optional and can be added on the card terminal; baristas appreciate tips but they are never required.\n\nFree guest Wi‑Fi network: BrewCorner-Guest. Password is posted at the counter and on the community board.\n\nRestrooms are available for customers; please ask for the access code at checkout.\n\nWe do not offer cash back on debit purchases."
+    },
+    {
+      "doc_id": "seasonal-specials",
+      "category": "promotions",
+      "title": "Current seasonal specials",
+      "tags": ["specials", "promotions", "seasonal", "discount"],
+      "text": "Spring 2026 specials at The Brew Corner ( valid through June 30, 2026 ):\n\nMaple oat latte (12 oz hot or 16 oz iced) $5.50 — features local maple syrup.\n\nStrawberry rhubarb muffin $4.25, available Fridays through Sundays.\n\nBuy any 12 oz hot drink and get a butter croissant for $2.00 ( counter offer only, one per customer per visit ).\n\nRiverside Roast whole bean bags: buy two 12 oz bags for $25 ( save $3 ).\n\nStudent discount: 10% off drinks Monday–Thursday before 3 PM with valid student ID."
+    },
+    {
+      "doc_id": "kids-menu",
+      "category": "menu",
+      "title": "Kids menu",
+      "tags": ["kids", "children", "menu", "family"],
+      "text": "Kids drinks (10 oz): Steamed milk $2.00, hot chocolate $3.00, apple juice $2.50, small drip coffee is not sold to minors.\n\nKids snacks: Mini chocolate chip cookie $1.50, cheese stick $1.75, fruit cup $3.25.\n\nKids meal: Half grilled cheese with apple slices and a small milk or juice $5.95.\n\nHigh chairs are available near the front window seating; ask staff to bring one to your table."
+    },
+    {
+      "doc_id": "soups-and-salads",
+      "category": "menu",
+      "title": "Soups and salads",
+      "tags": ["soup", "salad", "lunch", "menu"],
+      "text": "Soup of the day (12 oz cup) $4.95, (16 oz bowl) $6.50. Typical rotations: tomato basil, chicken noodle, roasted vegetable. Ask the counter for today's soup.\n\nSide garden salad $4.25 — mixed greens, tomato, cucumber, vinaigrette on the side.\n\nCaesar salad ( entree ) $8.50 — romaine, parmesan, croutons; add grilled chicken $3.00.\n\nQuinoa harvest bowl $9.25 — quinoa, roasted squash, kale, lemon tahini dressing; vegan."
+    },
+    {
+      "doc_id": "reusable-mug-program",
+      "category": "policy",
+      "title": "Reusable mug and cup discount",
+      "tags": ["reusable", "mug", "discount", "sustainability"],
+      "text": "Bring your own clean reusable cup and get $0.25 off any hot or iced bar drink.\n\nBrew Corner branded tumblers (16 oz) $18.00 include a free drink the day of purchase.\n\nWe rinse cups briefly at the counter but cannot deep-clean customer vessels; lids must fit a standard 16 oz opening.\n\nDiscount does not apply to bottled or packaged drinks from the grocery aisle."
+    },
+    {
+      "doc_id": "gift-cards-merchandise",
+      "category": "products",
+      "title": "Gift cards and retail merchandise",
+      "tags": ["gift-card", "merchandise", "t-shirts", "mugs"],
+      "text": "Gift cards are sold at the counter in any amount from $5 to $200. Gift cards do not expire and have no maintenance fee.\n\nMerchandise: Brew Corner logo tee $22.00 ( S–XL ), enamel pin $8.00, tote bag $14.00, ceramic mug $16.00.\n\nSeasonal candles (8 oz) $12.00 when in stock on the gift shelf near checkout.\n\nGift card balances can be checked at the counter only — the kiosk cannot look up balances."
+    },
+    {
+      "doc_id": "catering-party-orders",
+      "category": "services",
+      "title": "Catering and large orders",
+      "tags": ["catering", "party", "trays", "advance-order"],
+      "text": "Coffee travelers (96 oz) $28.00 — serves about 12 cups; includes cups, lids, and sugar on the side. Order at least 24 hours ahead at the counter.\n\nPastry platters: 12 assorted pastries $42.00, 24-piece $78.00. Available for pickup only.\n\nSandwich platters for meetings ( serves 8 ) $65.00 — mixed turkey, cheese, and veggie wraps cut into halves.\n\nWe do not deliver. Pickup times are scheduled in 30-minute windows during open hours."
+    },
+    {
+      "doc_id": "senior-military-discounts",
+      "category": "promotions",
+      "title": "Senior and military discounts",
+      "tags": ["senior", "military", "veteran", "discount"],
+      "text": "Senior discount: 10% off bar drinks and bakery items for customers age 65+ every day. Show ID at checkout.\n\nMilitary and veteran discount: 10% off the entire purchase for active duty and veterans with ID.\n\nDiscounts cannot be combined with Brew Corner Rewards redemption or other coupons.\n\nDiscount applies in store only at the counter or kiosk checkout — not on catering pre-orders paid by invoice."
+    },
+    {
+      "doc_id": "dairy-free-vegan-guide",
+      "category": "faq",
+      "title": "Dairy-free and vegan guide",
+      "tags": ["vegan", "dairy-free", "plant-based", "oat-milk"],
+      "text": "Plant milks for coffee: oat $0.60, almond $0.60, soy $0.60 — no extra charge for dairy-free on drip coffee.\n\nVegan food: quinoa harvest bowl, garden salad with vinaigrette, plain bagel ( confirm spread at counter ), almond flour brownie.\n\nNot vegan: all croissants, most muffins, hot chocolate ( contains milk ), chai default mix ( ask for plant milk ).\n\nOat milk is stored separately but prepared on shared equipment; not certified allergen-free."
+    },
+    {
+      "doc_id": "frozen-meals-takehome",
+      "category": "products",
+      "title": "Frozen and refrigerated take-home meals",
+      "tags": ["frozen", "meals", "refrigerated", "take-home"],
+      "text": "Freezer case near aisle 2: lasagna tray ( serves 2 ) $11.99, vegetable curry $9.99, chicken pot pie $8.49.\n\nRefrigerated case: fresh pasta packs $7.50, hummus tub $5.25, salsa $4.75.\n\nAll frozen and chilled items are sold as-is; check best-by dates before purchase.\n\nWe do not microwave customer purchases in store; reheating instructions are on each package."
+    },
+    {
+      "doc_id": "produce-fresh-section",
+      "category": "products",
+      "title": "Fresh produce section",
+      "tags": ["produce", "fruit", "vegetables", "fresh"],
+      "text": "Produce is restocked Monday, Wednesday, and Friday mornings.\n\nTypical items: bananas $0.69 each, avocados $1.99 each, apples $1.49 lb, salad kits $4.99, baby carrots $2.49 bag.\n\nSeasonal berries vary in price; see shelf tags.\n\nProduce is sold by weight or unit as marked. No returns on fresh produce once purchased."
+    },
+    {
+      "doc_id": "cleaning-household-aisle",
+      "category": "products",
+      "title": "Cleaning and household supplies",
+      "tags": ["cleaning", "household", "paper-towels", "detergent"],
+      "text": "Aisle 3 household basics: paper towels 2-roll $4.99, dish soap 18 oz $3.49, laundry detergent 32 oz $7.99.\n\nTrash bags ( kitchen, 20-count ) $5.50, sponges 3-pack $3.25, all-purpose spray $4.25.\n\nToilet paper 4-pack $5.99 when in stock.\n\nHousehold items are final sale once opened."
+    },
+    {
+      "doc_id": "pet-treats-corner",
+      "category": "products",
+      "title": "Pet treats and supplies",
+      "tags": ["pet", "dog", "treats", "supplies"],
+      "text": "Small pet endcap near checkout: dog biscuits 12 oz $6.99, cat treats 3 oz $4.50.\n\nPortable water bowl $9.00, leash $14.00 ( limited colors ).\n\nWe allow leashed, well-behaved dogs in the grocery area only; pets are not permitted at indoor café tables.\n\nWater bowls for dogs are available outside the front entrance."
+    },
+    {
+      "doc_id": "magazine-card-rack",
+      "category": "products",
+      "title": "Magazines, cards, and sundries",
+      "tags": ["magazines", "greeting-cards", "sundries", "checkout"],
+      "text": "Front rack: local weekly paper $2.00, national magazines $5.99–$8.99.\n\nGreeting cards $3.50–$6.00, gift wrap rolls $4.00.\n\nSundries at checkout: hand sanitizer 2 oz $2.99, lip balm $3.25, phone charging cable $12.00 ( USB-C and Lightning ).\n\nMagazines and cards are final sale."
+    },
+    {
+      "doc_id": "seating-wifi-lounge",
+      "category": "store-info",
+      "title": "Seating, Wi‑Fi, and study space",
+      "tags": ["seating", "wifi", "lounge", "outlets"],
+      "text": "Indoor seating: 14 tables inside, 6 seats at the community bar, 4 outdoor tables ( weather permitting ).\n\nOutlets are available along the east wall and at two bar seats; extension cords are not permitted.\n\nFree Wi‑Fi: network BrewCorner-Guest, password posted at the counter.\n\nDuring busy hours ( 8–10 AM weekdays ) a 60-minute seat courtesy is appreciated when others are waiting."
+    },
+    {
+      "doc_id": "high-chairs-family-seating",
+      "category": "store-info",
+      "title": "Families, strollers, and high chairs",
+      "tags": ["family", "high-chair", "stroller", "kids"],
+      "text": "Two high chairs and one booster seat are available; ask staff at the counter.\n\nStrollers may be parked near the front coat rack; please do not block the aisle to the espresso bar.\n\nChanging table is in the customer restroom; access code from checkout.\n\nKids must be supervised by an adult in the seating area at all times."
+    },
+    {
+      "doc_id": "accessibility-in-store",
+      "category": "store-info",
+      "title": "Accessibility in the store",
+      "tags": ["accessibility", "wheelchair", "ADA", "assistance"],
+      "text": "Step-free entry from the main door; automatic door opener on the right-hand entrance.\n\nAisles are minimum 36 inches wide; lower shelves hold popular grocery items.\n\nThis kiosk supports spoken questions via the mic button and text input on screen.\n\nIf you need help reaching a product, any staff member at the counter can assist."
+    },
+    {
+      "doc_id": "lost-and-found",
+      "category": "policy",
+      "title": "Lost and found",
+      "tags": ["lost", "found", "belongings", "policy"],
+      "text": "Items left in the store are held at the counter for 30 days.\n\nCommon items: umbrellas, water bottles, laptops, gloves.\n\nTo claim an item, describe it to a staff member; we may ask for details like color or brand.\n\nThe kiosk cannot log or track lost items — speak with the counter staff in person."
+    },
+    {
+      "doc_id": "community-events-board",
+      "category": "store-info",
+      "title": "Community board and local events",
+      "tags": ["community", "events", "bulletin", "local"],
+      "text": "The community board near the exit posts flyers for local farmers markets, library events, and school fundraisers.\n\nBrew Corner hosts a free acoustic music night on the first Friday of each month, 6–8 PM, in the outdoor seating area.\n\nBulletin posting is free for non-commercial neighborhood notices; ask the manager for a pin slot.\n\nEvent details change often — read the board in store or ask staff what is coming up this week."
+    }
+  ]
+}
