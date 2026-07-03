@@ -166,6 +166,31 @@ export default function AdminPage() {
     }
   };
 
+  const syncFromEdge = async () => {
+    if (
+      !window.confirm(
+        "Replace the local catalog with everything on Moorcheh Edge (UNO Q)? " +
+          "Local document rows will be overwritten.",
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setStatus("");
+    try {
+      const result = await api.syncFromEdge();
+      setStatus(
+        `Synced from ${result.edge_url}: ${result.documents} document(s), ${result.chunks} chunk(s)`,
+      );
+      await refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="admin-layout">
       <header className="admin-header">
@@ -176,9 +201,19 @@ export default function AdminPage() {
             Moorcheh Edge at <code className="inline-code">{edgeUrl || "…"}</code>
           </p>
         </div>
-        <button type="button" className="btn btn--ghost" onClick={refresh} disabled={busy}>
-          Refresh
-        </button>
+        <div className="admin-header-actions">
+          <button
+            type="button"
+            className="btn btn--secondary"
+            onClick={syncFromEdge}
+            disabled={busy}
+          >
+            Sync from UNO Q
+          </button>
+          <button type="button" className="btn btn--ghost" onClick={refresh} disabled={busy}>
+            Refresh
+          </button>
+        </div>
       </header>
 
       <div className="stat-row">

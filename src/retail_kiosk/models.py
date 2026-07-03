@@ -67,6 +67,12 @@ class SyncResult(BaseModel):
     chunk_ids: list[str]
 
 
+class CatalogSyncResult(BaseModel):
+    edge_url: str
+    documents: int
+    chunks: int
+
+
 class KioskPromptSettings(BaseModel):
     header_prompt: str = Field(..., min_length=1, max_length=8000)
     footer_prompt: str = Field(..., min_length=1, max_length=8000)

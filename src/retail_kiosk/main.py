@@ -24,10 +24,11 @@ from retail_kiosk.config import (
     voice_proxy_url,
 )
 from retail_kiosk.stream_ask import iter_ask_stream_safe
-from retail_kiosk.edge_sync import EdgeSyncService
+from retail_kiosk.edge_sync import CatalogProxyRequiredError, EdgeSyncService
 from retail_kiosk.models import (
     AskRequest,
     AskResponse,
+    CatalogSyncResult,
     ChunkRecord,
     ConversationCreate,
     ConversationDetail,
@@ -131,6 +132,10 @@ def create_app() -> FastAPI:
     def create_document(payload: DocumentCreate) -> SyncResult:
         try:
             return sync.create_document(payload)
+        except CatalogProxyRequiredError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except VoiceProxyError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         except MoorchehEdgeApiError as exc:
@@ -140,6 +145,10 @@ def create_app() -> FastAPI:
     def update_document(doc_id: str, payload: DocumentUpdate) -> SyncResult:
         try:
             return sync.update_document(doc_id, payload)
+        except CatalogProxyRequiredError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except VoiceProxyError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except MoorchehEdgeApiError as exc:
@@ -153,6 +162,15 @@ def create_app() -> FastAPI:
             return sync.delete_document(doc_id)
         except MoorchehEdgeApiError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @app.post("/admin/sync-from-edge", response_model=CatalogSyncResult)
+    def sync_from_edge() -> CatalogSyncResult:
+        try:
+            return sync.pull_from_edge()
+        except MoorchehEdgeApiError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/admin/settings", response_model=KioskPromptSettings)
     def get_prompt_settings() -> KioskPromptSettings:

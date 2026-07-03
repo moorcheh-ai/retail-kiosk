@@ -283,6 +283,61 @@ class ChunkCatalog:
             conn.execute("DELETE FROM documents WHERE doc_id = ?", (doc_id,))
         return chunk_ids
 
+    def replace_all_from_edge(
+        self,
+        *,
+        edge_url: str,
+        chunks: list[BuiltChunk],
+    ) -> tuple[int, int]:
+        """Replace the local catalog with chunks exported from Moorcheh Edge."""
+        from retail_kiosk.chunk_meta import group_chunks_by_document, source_text_for_doc
+
+        grouped = group_chunks_by_document(chunks)
+        now = _utc_now()
+        with self._connect() as conn:
+            conn.execute("DELETE FROM chunks")
+            conn.execute("DELETE FROM documents")
+            for doc_id in sorted(grouped):
+                doc_chunks = sorted(grouped[doc_id], key=lambda row: row.chunk_index)
+                first = doc_chunks[0]
+                conn.execute(
+                    """
+                    INSERT INTO documents (
+                        doc_id, category, title, tags, source_text, edge_url, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        doc_id,
+                        first.category,
+                        first.title,
+                        format_tags(first.tags),
+                        source_text_for_doc(doc_chunks),
+                        edge_url,
+                        now,
+                    ),
+                )
+                for chunk in doc_chunks:
+                    conn.execute(
+                        """
+                        INSERT INTO chunks (
+                            chunk_id, doc_id, chunk_index, category, title,
+                            tags, text, edge_url, updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            chunk.chunk_id,
+                            chunk.doc_id,
+                            chunk.chunk_index,
+                            chunk.category,
+                            chunk.title,
+                            format_tags(chunk.tags),
+                            chunk.text,
+                            edge_url,
+                            now,
+                        ),
+                    )
+        return len(grouped), len(chunks)
+
     def delete_chunk_ids(self, chunk_ids: list[str]) -> None:
         if not chunk_ids:
             return

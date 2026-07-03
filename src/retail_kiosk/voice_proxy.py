@@ -91,6 +91,28 @@ def proxy_voice_speak(*, text: str) -> VoiceSpeakResponse:
     return VoiceSpeakResponse(spoke=bool(data.get("spoke", True)))
 
 
+def proxy_catalog_document(
+    *,
+    doc_id: str,
+    category: str,
+    title: str,
+    tags: list[str],
+    text: str,
+    orphan_chunk_ids: list[str] | None = None,
+) -> dict[str, Any]:
+    """Chunk, embed, and upload on UNO Q via voice serve."""
+    payload: dict[str, Any] = {
+        "doc_id": doc_id.strip(),
+        "category": category.strip(),
+        "title": title.strip(),
+        "text": text,
+        "tags": tags,
+    }
+    if orphan_chunk_ids:
+        payload["orphan_chunk_ids"] = orphan_chunk_ids
+    return _voice_proxy_post("/catalog/document", payload)
+
+
 def proxy_voice_ask(
     catalog: ChunkCatalog,
     *,
@@ -177,6 +199,7 @@ def voice_proxy_configured() -> bool:
 
 __all__ = [
     "VoiceProxyError",
+    "proxy_catalog_document",
     "proxy_edge_rag",
     "proxy_voice_ask",
     "proxy_voice_listen",

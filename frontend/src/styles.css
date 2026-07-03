@@ -1167,6 +1167,13 @@ textarea {
   gap: 1rem;
 }
 
+.admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .stat-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
