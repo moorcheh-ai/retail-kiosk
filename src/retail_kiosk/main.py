@@ -24,10 +24,11 @@ from retail_kiosk.config import (
     voice_proxy_url,
 )
 from retail_kiosk.stream_ask import iter_ask_stream_safe
-from retail_kiosk.edge_sync import EdgeSyncService
+from retail_kiosk.edge_sync import CatalogProxyRequiredError, EdgeSyncService
 from retail_kiosk.models import (
     AskRequest,
     AskResponse,
+    CatalogSyncResult,
     ChunkRecord,
     ConversationCreate,
     ConversationDetail,
@@ -54,6 +55,7 @@ from retail_kiosk.voice_kiosk import (
 )
 from retail_kiosk.voice_proxy import (
     VoiceProxyError,
+    proxy_edge_rag,
     proxy_voice_ask,
     proxy_voice_listen,
     proxy_voice_speak,
@@ -96,8 +98,6 @@ def create_app() -> FastAPI:
             "catalog_db": str(catalog_db_path()),
             "voice_available": voice_available(),
             "voice_proxy_url": voice_proxy_url(),
-            "rag_embed_on": "pc",
-            "voice_proxy_used_for": "speak" if voice_proxy_configured() else None,
             "max_customer_questions": max_customer_questions(),
             "edge": edge,
         }
@@ -132,6 +132,10 @@ def create_app() -> FastAPI:
     def create_document(payload: DocumentCreate) -> SyncResult:
         try:
             return sync.create_document(payload)
+        except CatalogProxyRequiredError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except VoiceProxyError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
         except MoorchehEdgeApiError as exc:
@@ -141,6 +145,10 @@ def create_app() -> FastAPI:
     def update_document(doc_id: str, payload: DocumentUpdate) -> SyncResult:
         try:
             return sync.update_document(doc_id, payload)
+        except CatalogProxyRequiredError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except VoiceProxyError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         except ValueError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except MoorchehEdgeApiError as exc:
@@ -154,6 +162,15 @@ def create_app() -> FastAPI:
             return sync.delete_document(doc_id)
         except MoorchehEdgeApiError as exc:
             raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+
+    @app.post("/admin/sync-from-edge", response_model=CatalogSyncResult)
+    def sync_from_edge() -> CatalogSyncResult:
+        try:
+            return sync.pull_from_edge()
+        except MoorchehEdgeApiError as exc:
+            raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @app.get("/admin/settings", response_model=KioskPromptSettings)
     def get_prompt_settings() -> KioskPromptSettings:
@@ -206,22 +223,14 @@ def create_app() -> FastAPI:
         try:
             assert_customer_may_ask(catalog, payload.conversation_id)
             history = build_chat_history(catalog, payload.conversation_id)
-            if voice_proxy_configured() and payload.speak:
-                result = proxy_voice_ask(
+            if voice_proxy_configured():
+                result = proxy_edge_rag(
                     catalog,
+                    payload.query,
                     top_k=payload.top_k,
                     kiosk_mode=payload.kiosk_mode,
                     threshold=payload.threshold,
-                    speak=True,
-                    query=payload.query,
                     chat_history=history,
-                )
-                result = AskResponse(
-                    query=result.query,
-                    answer=result.answer,
-                    model=result.model,
-                    context_count=result.context_count,
-                    sources=result.sources,
                 )
             else:
                 result = sync.ask(

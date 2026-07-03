@@ -72,6 +72,12 @@ export type SyncResult = {
   chunk_ids: string[];
 };
 
+export type CatalogSyncResult = {
+  edge_url: string;
+  documents: number;
+  chunks: number;
+};
+
 export type AskResponse = {
   query: string;
   answer: string;
@@ -139,6 +145,7 @@ type AskOptions = {
 export type AskStreamHandlers = {
   onMeta?: (data: Record<string, unknown>) => void;
   onHolding?: (data: Record<string, unknown>) => void;
+  onThinking?: (data: Record<string, unknown>) => void;
   onToken?: (delta: string) => void;
   onSentence?: (text: string) => void;
   onDone?: (data: AskResponse) => void;
@@ -203,6 +210,8 @@ async function askStreamOnce(
           handlers.onMeta?.(data);
         } else if (event.event === "holding") {
           handlers.onHolding?.(data);
+        } else if (event.event === "thinking") {
+          handlers.onThinking?.(data);
         } else if (event.event === "token") {
           handlers.onToken?.(String(data.delta ?? ""));
         } else if (event.event === "sentence") {
@@ -282,6 +291,10 @@ export const api = {
         updated_at: string;
       }>
     >("/admin/documents"),
+  syncFromEdge: () =>
+    request<CatalogSyncResult>("/admin/sync-from-edge", {
+      method: "POST",
+    }),
   getDocument: (docId: string) =>
     request<DocumentDetail>(`/admin/documents/${encodeURIComponent(docId)}`),
   createDocument: (body: {
