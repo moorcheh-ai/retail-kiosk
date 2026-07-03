@@ -54,6 +54,7 @@ from retail_kiosk.voice_kiosk import (
 )
 from retail_kiosk.voice_proxy import (
     VoiceProxyError,
+    proxy_edge_rag,
     proxy_voice_ask,
     proxy_voice_listen,
     proxy_voice_speak,
@@ -96,8 +97,6 @@ def create_app() -> FastAPI:
             "catalog_db": str(catalog_db_path()),
             "voice_available": voice_available(),
             "voice_proxy_url": voice_proxy_url(),
-            "rag_embed_on": "pc",
-            "voice_proxy_used_for": "speak" if voice_proxy_configured() else None,
             "max_customer_questions": max_customer_questions(),
             "edge": edge,
         }
@@ -206,22 +205,14 @@ def create_app() -> FastAPI:
         try:
             assert_customer_may_ask(catalog, payload.conversation_id)
             history = build_chat_history(catalog, payload.conversation_id)
-            if voice_proxy_configured() and payload.speak:
-                result = proxy_voice_ask(
+            if voice_proxy_configured():
+                result = proxy_edge_rag(
                     catalog,
+                    payload.query,
                     top_k=payload.top_k,
                     kiosk_mode=payload.kiosk_mode,
                     threshold=payload.threshold,
-                    speak=True,
-                    query=payload.query,
                     chat_history=history,
-                )
-                result = AskResponse(
-                    query=result.query,
-                    answer=result.answer,
-                    model=result.model,
-                    context_count=result.context_count,
-                    sources=result.sources,
                 )
             else:
                 result = sync.ask(

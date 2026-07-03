@@ -173,7 +173,7 @@ export default function AdminPage() {
           <p className="eyebrow">Admin dashboard</p>
           <h2>Store knowledge base</h2>
           <p className="hero-sub">
-            Embed on PC · sync to edge at <code className="inline-code">{edgeUrl || "…"}</code>
+            Moorcheh Edge at <code className="inline-code">{edgeUrl || "…"}</code>
           </p>
         </div>
         <button type="button" className="btn btn--ghost" onClick={refresh} disabled={busy}>

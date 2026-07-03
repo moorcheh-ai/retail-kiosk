@@ -85,7 +85,6 @@ def _persist_done_event(
 
 def _proxy_voice_stream(
     catalog: ChunkCatalog,
-    sync: EdgeSyncService,
     *,
     query: str,
     top_k: int,
@@ -102,11 +101,9 @@ def _proxy_voice_stream(
 
     prompts = catalog.get_prompt_settings()
     voice = catalog.get_voice_settings()
-    # Embed on the PC so UNO Q only runs TTS + Ollama (avoids BGE + Piper + LLM RAM fight).
-    query_vector = sync.embed_query(query.strip())
+    # Query text only — UNO Q voice serve embeds locally, then calls :8080/answer/stream.
     payload: dict[str, Any] = {
         "query": query.strip(),
-        "query_vector": query_vector,
         "top_k": top_k,
         "kiosk_mode": kiosk_mode,
         "threshold": threshold,
@@ -114,6 +111,7 @@ def _proxy_voice_stream(
         "footer_prompt": prompts.footer_prompt,
         "speak": speak,
         "holding_enabled": voice.holding_enabled,
+        "thinking_enabled": True,
     }
     if chat_history:
         payload["chat_history"] = chat_history
@@ -160,6 +158,9 @@ def _proxy_voice_stream(
                     yield block.encode("utf-8")
                     return
                 if event_name == "holding":
+                    yield block.encode("utf-8")
+                    continue
+                if event_name == "thinking":
                     yield block.encode("utf-8")
                     continue
                 yield block.encode("utf-8")
@@ -261,14 +262,13 @@ def iter_ask_stream(
     if not stripped:
         raise ValueError("query must be non-empty")
 
-    # Voice proxy (:8766) is for hardware TTS/mic. Text chat (speak:false) streams
-    # directly PC embed → edge :8080 to avoid an extra proxy hop that drops SSE.
-    use_voice_proxy = voice_proxy_configured() and speak
+    # When MOORCHEH_VOICE_PROXY_URL is set, all customer asks go through UNO Q
+    # voice serve (:8766). UNO embeds the query locally, then calls edge :8080.
+    use_voice_proxy = voice_proxy_configured()
 
     if use_voice_proxy:
         yield from _proxy_voice_stream(
             catalog,
-            sync,
             query=stripped,
             top_k=top_k,
             kiosk_mode=kiosk_mode,
