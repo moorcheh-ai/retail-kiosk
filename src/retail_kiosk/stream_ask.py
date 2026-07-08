@@ -14,8 +14,19 @@ from retail_kiosk.catalog import ChunkCatalog
 from retail_kiosk.config import DEFAULT_SEARCH_THRESHOLD, DEFAULT_TOP_K, voice_proxy_url
 from retail_kiosk.conversations import persist_exchange
 from retail_kiosk.edge_sync import EdgeSyncService
+from retail_kiosk.intent import (
+    IntentResult,
+    canned_response,
+    classify_intent,
+    intent_config_from_voice_settings,
+)
 from retail_kiosk.models import AskResponse
-from retail_kiosk.voice_proxy import VoiceProxyError, voice_proxy_configured
+from retail_kiosk.voice_proxy import (
+    VoiceProxyError,
+    proxy_voice_search,
+    proxy_voice_speak,
+    voice_proxy_configured,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -50,15 +61,18 @@ def _persist_done_event(
     catalog: ChunkCatalog,
     *,
     query: str,
-    data: str,
+    data: str | dict[str, Any],
     conversation_id: str | None,
     input_mode: str,
 ) -> bytes | None:
     """Attach conversation_id to a done SSE event; always emit done even if SQLite fails."""
-    try:
-        parsed = json.loads(data)
-    except json.JSONDecodeError:
-        return None
+    if isinstance(data, dict):
+        parsed = data
+    else:
+        try:
+            parsed = json.loads(data)
+        except json.JSONDecodeError:
+            return None
 
     answer = str(parsed.get("answer") or "").strip()
     result = AskResponse(
@@ -83,6 +97,61 @@ def _persist_done_event(
     return _format_sse("done", parsed)
 
 
+def _stream_intent_event(intent: IntentResult) -> bytes:
+    return _format_sse(
+        "intent",
+        {
+            "kind": intent.kind.value,
+            "confidence": intent.confidence,
+            "method": intent.method.value,
+            "needs_rag": intent.needs_rag,
+        },
+    )
+
+
+def _stream_social_response(
+    catalog: ChunkCatalog,
+    *,
+    query: str,
+    intent: IntentResult,
+    speak: bool,
+    conversation_id: str | None,
+    input_mode: str,
+) -> Iterator[bytes]:
+    voice = catalog.get_voice_settings()
+    config = intent_config_from_voice_settings(voice)
+    answer = canned_response(intent.kind, config)
+
+    yield _stream_intent_event(intent)
+
+    done_payload = {
+        "query": query.strip(),
+        "answer": answer,
+        "model": None,
+        "context_count": 0,
+        "sources": [],
+        "intent": intent.kind.value,
+    }
+    done = _persist_done_event(
+        catalog,
+        query=query,
+        data=done_payload,
+        conversation_id=conversation_id,
+        input_mode=input_mode,
+    )
+    if done is not None:
+        yield done
+    else:
+        yield _format_sse("done", done_payload)
+
+    if speak and voice_proxy_configured():
+        try:
+            proxy_voice_speak(text=answer)
+            yield _format_sse("sentence", {"text": answer})
+        except VoiceProxyError:
+            logger.exception("Failed to speak social intent response on UNO Q")
+
+
 def _proxy_voice_stream(
     catalog: ChunkCatalog,
     *,
@@ -94,6 +163,9 @@ def _proxy_voice_stream(
     chat_history: list[dict[str, str]] | None,
     conversation_id: str | None,
     input_mode: str,
+    intent: IntentResult,
+    query_vector: list[float],
+    context_count: int,
 ) -> Iterator[bytes]:
     proxy = voice_proxy_url()
     if not proxy:
@@ -101,20 +173,25 @@ def _proxy_voice_stream(
 
     prompts = catalog.get_prompt_settings()
     voice = catalog.get_voice_settings()
-    # Query text only — UNO Q voice serve embeds locally, then calls :8080/answer/stream.
+    holding_on = bool(voice.holding_enabled and context_count > 0)
+    thinking_on = context_count > 0
+
     payload: dict[str, Any] = {
         "query": query.strip(),
+        "query_vector": query_vector,
         "top_k": top_k,
         "kiosk_mode": kiosk_mode,
         "threshold": threshold,
         "header_prompt": prompts.header_prompt,
         "footer_prompt": prompts.footer_prompt,
         "speak": speak,
-        "holding_enabled": voice.holding_enabled,
-        "thinking_enabled": True,
+        "holding_enabled": holding_on,
+        "thinking_enabled": thinking_on,
     }
     if chat_history:
         payload["chat_history"] = chat_history
+
+    yield _stream_intent_event(intent)
 
     url = f"{proxy.rstrip('/')}/ask/stream"
     try:
@@ -122,7 +199,6 @@ def _proxy_voice_stream(
             url,
             json=payload,
             stream=True,
-            # Connect timeout only; do not cut off mid-stream while UNO Q generates.
             timeout=(30, None),
         )
     except RequestException as exc:
@@ -157,10 +233,7 @@ def _proxy_voice_stream(
                 if event_name == "error":
                     yield block.encode("utf-8")
                     return
-                if event_name == "holding":
-                    yield block.encode("utf-8")
-                    continue
-                if event_name == "thinking":
+                if event_name in {"holding", "thinking", "intent"}:
                     yield block.encode("utf-8")
                     continue
                 yield block.encode("utf-8")
@@ -196,8 +269,11 @@ def _local_edge_stream(
     chat_history: list[dict[str, str]] | None,
     conversation_id: str | None,
     input_mode: str,
+    intent: IntentResult,
 ) -> Iterator[bytes]:
     from moorcheh_edge._sse import iter_sse_events, parse_sse_json
+
+    yield _stream_intent_event(intent)
 
     pending = ""
     for chunk in sync.iter_answer_stream(
@@ -262,11 +338,31 @@ def iter_ask_stream(
     if not stripped:
         raise ValueError("query must be non-empty")
 
-    # When MOORCHEH_VOICE_PROXY_URL is set, all customer asks go through UNO Q
-    # voice serve (:8766). UNO embeds the query locally, then calls edge :8080.
+    voice = catalog.get_voice_settings()
+    intent = classify_intent(stripped, intent_config_from_voice_settings(voice))
+
+    if not intent.needs_rag:
+        yield from _stream_social_response(
+            catalog,
+            query=stripped,
+            intent=intent,
+            speak=speak,
+            conversation_id=conversation_id,
+            input_mode=input_mode,
+        )
+        return
+
     use_voice_proxy = voice_proxy_configured()
 
     if use_voice_proxy:
+        preflight = proxy_voice_search(
+            query=stripped,
+            top_k=top_k,
+            kiosk_mode=kiosk_mode,
+            threshold=threshold,
+        )
+        query_vector = preflight["query_vector"]
+        context_count = int(preflight["context_count"])
         yield from _proxy_voice_stream(
             catalog,
             query=stripped,
@@ -277,6 +373,9 @@ def iter_ask_stream(
             chat_history=chat_history,
             conversation_id=conversation_id,
             input_mode=input_mode,
+            intent=intent,
+            query_vector=query_vector,
+            context_count=context_count,
         )
         return
 
@@ -290,6 +389,7 @@ def iter_ask_stream(
         chat_history=chat_history,
         conversation_id=conversation_id,
         input_mode=input_mode,
+        intent=intent,
     )
 
 

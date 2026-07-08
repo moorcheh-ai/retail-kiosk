@@ -83,6 +83,12 @@ class KioskVoiceSettings(BaseModel):
     holding_promo: str = Field(default="", max_length=2000)
     holding_enabled: bool = True
     holding_template: str | None = Field(default=None, max_length=4000)
+    greeting_reply: str = Field(default="", max_length=2000)
+    thanks_reply: str = Field(default="", max_length=2000)
+    farewell_reply: str = Field(default="", max_length=2000)
+    help_reply: str = Field(default="", max_length=2000)
+    chitchat_reply: str = Field(default="", max_length=2000)
+    ack_reply: str = Field(default="", max_length=2000)
 
 
 class VoiceAskRequest(BaseModel):

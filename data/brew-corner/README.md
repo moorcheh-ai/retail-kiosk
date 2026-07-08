@@ -2,6 +2,8 @@
 
 Synthetic retail dataset for an **in-person store kiosk** demo (customer is already inside the shop — not a website or call center).
 
+**Catalog file:** [`tests/brew-corner-catalog.json`](../../tests/brew-corner-catalog.json)
+
 | Field | Value |
 |-------|--------|
 | **Store name** | The Brew Corner |
@@ -23,54 +25,38 @@ Synthetic retail dataset for an **in-person store kiosk** demo (customer is alre
 - "Is there a senior discount?"
 - "Can I bring my dog inside?"
 
-## Option 1 — Seed script (recommended)
+## Option 1 — Upload to UNO Q (recommended)
 
-From your PC, with `MOORCHEH_EDGE_URL` pointing at the UNO Q and `retail-kiosk-api` **not** required (talks to edge directly):
+`moorcheh-edge up` must be running on the board.
 
-```powershell
-$env:MOORCHEH_EDGE_URL = "http://10.0.0.196:8080"
-python "c:\Users\patel\Downloads\Edge AI\moorcheh-edge-private\scripts\seed-retail-catalog.py" `
-  --catalog "c:\Users\patel\Downloads\Edge AI\moorcheh-edge-private\retail-kiosk\data\brew-corner\catalog.json"
-```
-
-Flags:
-
-| Flag | Purpose |
-|------|---------|
-| `--skip-existing` | Skip documents already in SQLite (default behavior) |
-| `--update-existing` | Re-upload and replace documents that already exist |
-| `--set-prompts` | Save store-specific header/footer prompts in SQLite |
-| `--clear-edge` | Call `moorcheh-edge clear-store` before upload (removes old test/sciq data) |
-
-Example — fresh edge + full catalog + prompts:
+**From the PC** (repo root):
 
 ```powershell
-$env:MOORCHEH_EDGE_URL = "http://10.0.0.196:8080"
-python "c:\Users\patel\Downloads\Edge AI\moorcheh-edge-private\scripts\seed-retail-catalog.py" `
-  --catalog "c:\Users\patel\Downloads\Edge AI\moorcheh-edge-private\retail-kiosk\data\brew-corner\catalog.json" `
-  --clear-edge --set-prompts
+scp tests/brew-corner-catalog.json arduino@<UNO_Q_IP>:~/
+scp tests/upload-catalog-to-edge.py arduino@<UNO_Q_IP>:~/
 ```
 
-## Option 2 — UNO Q only (one command, Python client)
-
-Copy the repo folder `retail-kiosk/data/brew-corner/` to the board if it is not there yet, then SSH in:
+**On the UNO Q:**
 
 ```bash
-source ~/moorcheh-venv/bin/activate ; python ~/scripts/upload-catalog-edge.py --catalog ~/retail-kiosk/data/brew-corner/catalog.json --clear -y
+source ~/moorcheh-venv/bin/activate
+python ~/upload-catalog-to-edge.py --catalog ~/brew-corner-catalog.json -y
 ```
 
-Uses `moorcheh-edge-client` only: clears edge, embeds on the board, uploads every chunk with `[meta]…[/meta]` formatting. Does not update PC SQLite or kiosk prompts — use Admin on PC for prompts, or Option 1 from PC for full sync.
+Use `--clear -y` to replace an existing catalog. Then `moorcheh-edge status` should show **`dimension`** and **`embedding_model`** set.
 
-## Option 3 — Admin UI (manual)
+**On the PC:** open **Admin → Prompts** and paste `header_prompt` and `footer_prompt` from `tests/brew-corner-catalog.json` if you want to customize them (defaults work for The Brew Corner).
+
+## Option 2 — Admin UI (manual)
 
 1. Open http://localhost:5173/admin
-2. **Answer prompts** tab — paste `header_prompt` and `footer_prompt` from `catalog.json` → Save
+2. **Answer prompts** tab — paste `header_prompt` and `footer_prompt` from `tests/brew-corner-catalog.json` → Save
 3. **Documents** tab — for each entry in `documents[]`, create a document:
    - **doc_id**, **category**, **title**, **tags** (comma-separated), **text**
 
 Each save embeds on the PC and syncs vectors to the UNO Q.
 
-## Option 4 — Clear old edge data first
+## Option 3 — Clear old edge data first
 
 If you still see sciq or unrelated chunks in answers:
 
@@ -80,20 +66,21 @@ source ~/moorcheh-venv/bin/activate
 moorcheh-edge clear-store
 ```
 
-Then run the seed script or re-upload via Admin.
+Then re-run the upload script or re-upload via Admin.
 
 ## File format
 
-`catalog.json` structure:
+`tests/brew-corner-catalog.json` structure:
 
 ```json
 {
-  "store": { "name", "tagline", "address", "phone" },
+  "store": { "name", "tagline" },
   "prompts": { "header_prompt", "footer_prompt" },
+  "voice": { "holding_enabled" },
   "documents": [
     { "doc_id", "category", "title", "tags", "text" }
   ]
 }
 ```
 
-You can copy this folder, rename the store in `catalog.json`, and edit documents for your own demo.
+Copy `tests/brew-corner-catalog.json`, rename the store, and edit documents for your own demo.

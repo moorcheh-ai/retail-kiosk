@@ -9,11 +9,17 @@ from typing import Iterator
 
 from retail_kiosk.chunking import BuiltChunk, format_tags
 from retail_kiosk.config import (
+    DEFAULT_ACK_REPLY,
+    DEFAULT_CHITCHAT_REPLY,
+    DEFAULT_FAREWELL_REPLY,
     DEFAULT_FOOTER_PROMPT,
+    DEFAULT_GREETING_REPLY,
     DEFAULT_HEADER_PROMPT,
+    DEFAULT_HELP_REPLY,
     DEFAULT_HOLDING_ENABLED,
     DEFAULT_HOLDING_PROMO,
     DEFAULT_STORE_NAME,
+    DEFAULT_THANKS_REPLY,
 )
 from retail_kiosk.models import (
     ChatMessage,
@@ -364,12 +370,24 @@ class ChunkCatalog:
                 conn, "holding_enabled", "true" if DEFAULT_HOLDING_ENABLED else "false"
             )
             template = self._get_setting(conn, "holding_template", "")
+            greeting_reply = self._get_setting(conn, "greeting_reply", DEFAULT_GREETING_REPLY)
+            thanks_reply = self._get_setting(conn, "thanks_reply", DEFAULT_THANKS_REPLY)
+            farewell_reply = self._get_setting(conn, "farewell_reply", DEFAULT_FAREWELL_REPLY)
+            help_reply = self._get_setting(conn, "help_reply", DEFAULT_HELP_REPLY)
+            chitchat_reply = self._get_setting(conn, "chitchat_reply", DEFAULT_CHITCHAT_REPLY)
+            ack_reply = self._get_setting(conn, "ack_reply", DEFAULT_ACK_REPLY)
         enabled = holding_enabled.strip().lower() not in {"0", "false", "no", "off"}
         return KioskVoiceSettings(
             store_name=store_name,
             holding_promo=holding_promo,
             holding_enabled=enabled,
             holding_template=template or None,
+            greeting_reply=greeting_reply,
+            thanks_reply=thanks_reply,
+            farewell_reply=farewell_reply,
+            help_reply=help_reply,
+            chitchat_reply=chitchat_reply,
+            ack_reply=ack_reply,
         )
 
     def update_voice_settings(self, settings: KioskVoiceSettings) -> KioskVoiceSettings:
@@ -389,6 +407,12 @@ class ChunkCatalog:
                 self._set_setting(conn, "holding_template", settings.holding_template.strip())
             else:
                 conn.execute("DELETE FROM kiosk_settings WHERE key = ?", ("holding_template",))
+            self._set_setting(conn, "greeting_reply", settings.greeting_reply.strip())
+            self._set_setting(conn, "thanks_reply", settings.thanks_reply.strip())
+            self._set_setting(conn, "farewell_reply", settings.farewell_reply.strip())
+            self._set_setting(conn, "help_reply", settings.help_reply.strip())
+            self._set_setting(conn, "chitchat_reply", settings.chitchat_reply.strip())
+            self._set_setting(conn, "ack_reply", settings.ack_reply.strip())
         return self.get_voice_settings()
 
     def update_prompt_settings(self, settings: KioskPromptSettings) -> KioskPromptSettings:
@@ -409,6 +433,12 @@ class ChunkCatalog:
             "store_name": DEFAULT_STORE_NAME,
             "holding_promo": DEFAULT_HOLDING_PROMO,
             "holding_enabled": "true" if DEFAULT_HOLDING_ENABLED else "false",
+            "greeting_reply": DEFAULT_GREETING_REPLY,
+            "thanks_reply": DEFAULT_THANKS_REPLY,
+            "farewell_reply": DEFAULT_FAREWELL_REPLY,
+            "help_reply": DEFAULT_HELP_REPLY,
+            "chitchat_reply": DEFAULT_CHITCHAT_REPLY,
+            "ack_reply": DEFAULT_ACK_REPLY,
         }
         for key, value in defaults.items():
             row = conn.execute(

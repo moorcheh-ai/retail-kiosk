@@ -251,6 +251,34 @@ class EdgeSyncService:
 
         yield from self._client.answer_stream(payload)
 
+    def preflight_search(
+        self,
+        query: str,
+        *,
+        top_k: int = DEFAULT_TOP_K,
+        kiosk_mode: bool = True,
+        threshold: float = DEFAULT_SEARCH_THRESHOLD,
+    ) -> tuple[list[float], int]:
+        """Embed locally and search edge; used when voice proxy is not configured."""
+        stripped = query.strip()
+        if not stripped:
+            raise ValueError("query must be non-empty")
+        vector = self._get_embedder().embed_query(stripped)
+        payload: dict = {
+            "query": vector,
+            "top_k": top_k,
+        }
+        if kiosk_mode:
+            payload["kiosk_mode"] = True
+            payload["threshold"] = threshold
+        elif threshold > 0:
+            payload["threshold"] = threshold
+        response = self._client.search(payload)
+        results = response.get("results") or []
+        if not isinstance(results, list):
+            results = []
+        return vector, len(results)
+
     def _delete_on_edge(self, chunk_ids: list[str]) -> None:
         if not chunk_ids:
             return

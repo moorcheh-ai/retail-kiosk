@@ -146,6 +146,7 @@ export type AskStreamHandlers = {
   onMeta?: (data: Record<string, unknown>) => void;
   onHolding?: (data: Record<string, unknown>) => void;
   onThinking?: (data: Record<string, unknown>) => void;
+  onIntent?: (data: Record<string, unknown>) => void;
   onToken?: (delta: string) => void;
   onSentence?: (text: string) => void;
   onDone?: (data: AskResponse) => void;
@@ -212,6 +213,8 @@ async function askStreamOnce(
           handlers.onHolding?.(data);
         } else if (event.event === "thinking") {
           handlers.onThinking?.(data);
+        } else if (event.event === "intent") {
+          handlers.onIntent?.(data);
         } else if (event.event === "token") {
           handlers.onToken?.(String(data.delta ?? ""));
         } else if (event.event === "sentence") {
