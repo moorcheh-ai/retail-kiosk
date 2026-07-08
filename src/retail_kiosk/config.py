@@ -32,6 +32,24 @@ DEFAULT_HOLDING_PROMO = (
 )
 DEFAULT_HOLDING_ENABLED = True
 
+DEFAULT_GREETING_REPLY = (
+    "Hi! Welcome to {store_name}. What can I help you find today?"
+)
+DEFAULT_THANKS_REPLY = (
+    "You're welcome! Let me know if you need anything else."
+)
+DEFAULT_FAREWELL_REPLY = (
+    "Thanks for visiting {store_name}. Have a great day!"
+)
+DEFAULT_HELP_REPLY = (
+    "I can answer questions about our products, prices, and store info. "
+    "What would you like to know?"
+)
+DEFAULT_CHITCHAT_REPLY = (
+    "I'm doing well, thanks for asking! How can I help you at {store_name} today?"
+)
+DEFAULT_ACK_REPLY = "Sounds good. Ask me anything else when you're ready."
+
 
 def _normalize_base_url(raw: str) -> str:
     """Strip whitespace/trailing slashes and trailing dots (breaks Windows DNS for IPs)."""

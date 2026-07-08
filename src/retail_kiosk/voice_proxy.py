@@ -91,6 +91,43 @@ def proxy_voice_speak(*, text: str) -> VoiceSpeakResponse:
     return VoiceSpeakResponse(spoke=bool(data.get("spoke", True)))
 
 
+def proxy_voice_search(
+    *,
+    query: str,
+    top_k: int = DEFAULT_TOP_K,
+    kiosk_mode: bool = True,
+    threshold: float = DEFAULT_SEARCH_THRESHOLD,
+) -> dict[str, Any]:
+    """Embed + search on UNO Q; returns context_count and query_vector."""
+    cleaned = query.strip()
+    if not cleaned:
+        raise VoiceProxyError("query is required")
+    data = _voice_proxy_post(
+        "/search",
+        {
+            "query": cleaned,
+            "top_k": top_k,
+            "kiosk_mode": kiosk_mode,
+            "threshold": threshold,
+        },
+    )
+    vector = data.get("query_vector")
+    if not isinstance(vector, list) or not vector:
+        raise VoiceProxyError("Voice server returned no query_vector")
+    results = data.get("results")
+    if not isinstance(results, list):
+        results = []
+    context_count = data.get("context_count")
+    if not isinstance(context_count, int):
+        context_count = len(results)
+    return {
+        "query": str(data.get("query") or cleaned),
+        "query_vector": vector,
+        "context_count": context_count,
+        "results": results,
+    }
+
+
 def proxy_catalog_document(
     *,
     doc_id: str,
@@ -203,6 +240,7 @@ __all__ = [
     "proxy_edge_rag",
     "proxy_voice_ask",
     "proxy_voice_listen",
+    "proxy_voice_search",
     "proxy_voice_speak",
     "voice_proxy_configured",
 ]

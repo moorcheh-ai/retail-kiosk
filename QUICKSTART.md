@@ -210,7 +210,7 @@ Use `--clear -y` to replace an existing catalog. Then `moorcheh-edge status` sho
 |------|---------|
 | `tests/brew-corner-catalog.json` | Demo store documents + prompts (The Brew Corner) |
 | `tests/upload-catalog-to-edge.py` | Embed on UNO Q and upload chunks to Moorcheh Edge `:8080` |
-| `data/brew-corner/` | Extended catalog dataset and seeding notes |
+| `data/brew-corner/README.md` | Sample questions and catalog upload notes |
 
 ---
 

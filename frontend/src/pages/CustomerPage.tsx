@@ -224,7 +224,13 @@ export default function CustomerPage() {
         },
         {
           onHolding: () => {
-            /* Keep thinking animation; holding audio plays on UNO Q in parallel with search. */
+            /* Store promo on UNO Q speaker; UI stays in thinking animation. */
+          },
+          onThinking: () => {
+            if (opts?.speak && opts?.inputMode === "voice") {
+              setPhase("thinking");
+              setStatusLine("Thinking…");
+            }
           },
           onToken: (delta) => {
             if (!gotToken) {
