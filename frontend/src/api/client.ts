@@ -163,6 +163,7 @@ async function askStreamOnce(
   const timer = window.setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
 
   let donePayload: AskResponse | null = null;
+  let accumulatedAnswer = "";
 
   try {
     const response = await fetch(`${base}/ask/stream`, {
@@ -217,7 +218,9 @@ async function askStreamOnce(
         } else if (event.event === "intent") {
           handlers.onIntent?.(data);
         } else if (event.event === "token") {
-          handlers.onToken?.(String(data.delta ?? ""));
+          const delta = String(data.delta ?? "");
+          accumulatedAnswer += delta;
+          handlers.onToken?.(delta);
         } else if (event.event === "sentence") {
           handlers.onSentence?.(String(data.text ?? ""));
         } else if (event.event === "done") {
@@ -252,6 +255,15 @@ async function askStreamOnce(
           handlers.onDone?.(donePayload);
         }
       }
+    }
+
+    if (!donePayload && accumulatedAnswer.trim()) {
+      donePayload = {
+        query,
+        answer: accumulatedAnswer.trim(),
+        conversation_id: opts?.conversationId ?? undefined,
+      };
+      handlers.onDone?.(donePayload);
     }
 
     if (!donePayload) {
