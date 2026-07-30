@@ -1,4 +1,5 @@
 import { parseSseChunk } from "../sse";
+import { VOICE_RECORD_SECONDS } from "../voiceConfig";
 
 const base = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8765";
 const DEFAULT_TIMEOUT_MS = 300_000;
@@ -359,13 +360,13 @@ export const api = {
       }),
     }),
   askStream,
-  voiceListen: (opts?: { untilSilence?: boolean; maxSeconds?: number; seconds?: number }) =>
+  voiceListen: (opts?: { seconds?: number }) =>
     request<VoiceListenResponse>("/ask/voice/listen", {
       method: "POST",
       body: JSON.stringify({
-        until_silence: opts?.seconds ? false : (opts?.untilSilence ?? true),
-        max_seconds: opts?.maxSeconds ?? 30,
-        ...(opts?.seconds ? { seconds: opts.seconds } : {}),
+        until_silence: false,
+        seconds: opts?.seconds ?? VOICE_RECORD_SECONDS,
+        max_seconds: opts?.seconds ?? VOICE_RECORD_SECONDS,
       }),
       timeoutMs: VOICE_TIMEOUT_MS,
     }),

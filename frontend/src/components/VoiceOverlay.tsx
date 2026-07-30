@@ -1,9 +1,10 @@
 type Props = {
   phase: "listening" | "transcribing";
   statusLine: string;
+  secondsLeft?: number | null;
 };
 
-export default function VoiceOverlay({ phase, statusLine }: Props) {
+export default function VoiceOverlay({ phase, statusLine, secondsLeft }: Props) {
   return (
     <div className="voice-overlay" role="dialog" aria-label="Voice recording">
       <div className="voice-overlay-backdrop" aria-hidden />
@@ -13,16 +14,24 @@ export default function VoiceOverlay({ phase, statusLine }: Props) {
           <span className="voice-orb-ring voice-orb-ring--2" />
           <span className="voice-orb-ring voice-orb-ring--3" />
           <span className="voice-orb-core">
-            <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
-              <path
-                fill="currentColor"
-                d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"
-              />
-            </svg>
+            {phase === "transcribing" ? (
+              <span className="voice-overlay-spinner" aria-hidden />
+            ) : (
+              <svg viewBox="0 0 24 24" width="32" height="32" aria-hidden>
+                <path
+                  fill="currentColor"
+                  d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"
+                />
+              </svg>
+            )}
           </span>
         </div>
         <p className="voice-overlay-title">
-          {phase === "listening" ? "Listening…" : "Transcribing…"}
+          {phase === "listening"
+            ? secondsLeft != null
+              ? `Recording… ${secondsLeft}s`
+              : "Recording…"
+            : "Transcribing…"}
         </p>
         <p className="voice-overlay-sub">{statusLine}</p>
       </div>

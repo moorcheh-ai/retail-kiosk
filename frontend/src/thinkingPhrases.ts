@@ -14,10 +14,10 @@ export const THINKING_PHRASES = [
 ];
 
 export const LISTENING_PHRASES = [
-  "Listening — speak, then pause when done…",
-  "Mic is open — pause when you finish…",
-  "Say your question, then stay quiet…",
-  "Recording until you stop speaking…",
+  "Recording for 5 seconds — speak now…",
+  "Mic is open — you have 5 seconds…",
+  "Say your question now…",
+  "Listening for up to 5 seconds…",
 ];
 
 export const TRANSCRIBING_PHRASES = [

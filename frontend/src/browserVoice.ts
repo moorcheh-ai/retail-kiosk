@@ -1,5 +1,7 @@
 /** Browser mic + speaker for PC demo; RAG still runs on UNO Q via POST /ask. */
 
+import { VOICE_RECORD_SECONDS } from "./voiceConfig";
+
 export function browserVoiceSupported(): boolean {
   if (typeof window === "undefined") return false;
   const hasRecognition =
@@ -12,7 +14,7 @@ function speechRecognitionCtor(): SpeechRecognitionConstructor | null {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
-export function listenOnce(): Promise<string> {
+export function listenOnce(seconds = VOICE_RECORD_SECONDS): Promise<string> {
   const Ctor = speechRecognitionCtor();
   if (!Ctor) {
     return Promise.reject(
@@ -23,21 +25,35 @@ export function listenOnce(): Promise<string> {
   return new Promise((resolve, reject) => {
     const recognition = new Ctor();
     recognition.lang = "en-US";
-    recognition.interimResults = false;
+    recognition.interimResults = true;
+    recognition.continuous = true;
     recognition.maxAlternatives = 1;
 
     let settled = false;
+    let transcript = "";
+    let timer: number | undefined;
+
     const finish = (fn: () => void) => {
       if (settled) return;
       settled = true;
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+      }
       fn();
     };
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const transcript = event.results[0]?.[0]?.transcript?.trim() ?? "";
-      if (transcript) {
-        finish(() => resolve(transcript));
+    const latestTranscript = (event: SpeechRecognitionEvent) => {
+      const parts: string[] = [];
+      for (let i = 0; i < event.results.length; i += 1) {
+        const piece = event.results[i]?.[0]?.transcript?.trim() ?? "";
+        if (piece) parts.push(piece);
       }
+      return parts.join(" ").trim();
+    };
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const heard = latestTranscript(event);
+      if (heard) transcript = heard;
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
@@ -61,14 +77,35 @@ export function listenOnce(): Promise<string> {
         finish(() => reject(new Error("Microphone permission denied. Allow mic access in the browser.")));
         return;
       }
+      if (event.error === "aborted") {
+        if (transcript.trim()) {
+          finish(() => resolve(transcript.trim()));
+        } else {
+          finish(() => reject(new Error("No speech heard. Try again.")));
+        }
+        return;
+      }
       finish(() => reject(new Error(event.error || "Speech recognition failed")));
     };
 
     recognition.onend = () => {
       if (!settled) {
-        finish(() => reject(new Error("No speech heard. Try again.")));
+        const heard = transcript.trim();
+        finish(() =>
+          heard
+            ? resolve(heard)
+            : reject(new Error("No speech heard. Try again and speak clearly.")),
+        );
       }
     };
+
+    timer = window.setTimeout(() => {
+      try {
+        recognition.stop();
+      } catch {
+        /* already ended */
+      }
+    }, seconds * 1000);
 
     try {
       recognition.start();

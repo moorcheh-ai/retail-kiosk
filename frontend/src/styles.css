@@ -524,6 +524,22 @@ textarea {
   color: var(--text-muted);
 }
 
+.voice-overlay-spinner {
+  display: block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.28);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: voice-spin 0.75s linear infinite;
+}
+
+@keyframes voice-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .chat-bubble--voice-msg {
   border-left: 3px solid var(--voice);
 }
