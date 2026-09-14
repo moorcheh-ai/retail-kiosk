@@ -9,12 +9,15 @@ import { useRotatingPhrase } from "../hooks/useRotatingPhrase";
 import {
   LISTENING_PHRASES,
   THINKING_PHRASES,
+  TRANSCRIBING_PHRASES,
 } from "../thinkingPhrases";
+import { VOICE_RECORD_SECONDS } from "../voiceConfig";
 
 type VoiceMode = "hardware" | "browser" | "none";
 type SessionPhase =
   | "idle"
   | "listening"
+  | "transcribing"
   | "thinking"
   | "streaming"
   | "speaking"
@@ -48,6 +51,7 @@ export default function CustomerPage() {
   const [pendingUser, setPendingUser] = useState<string | null>(null);
   const [streamingAnswer, setStreamingAnswer] = useState<string | null>(null);
   const [maxCustomerQuestions, setMaxCustomerQuestions] = useState(4);
+  const [listenSecondsLeft, setListenSecondsLeft] = useState<number | null>(null);
 
   const busy = phase !== "idle" && phase !== "done" && phase !== "error";
   const userQuestionCount = useMemo(
@@ -58,6 +62,7 @@ export default function CustomerPage() {
   const questionLimitMessage = `This chat allows up to ${maxCustomerQuestions} questions. Start a new chat to continue.`;
   const thinkingPhrase = useRotatingPhrase(THINKING_PHRASES, phase === "thinking");
   const listeningPhrase = useRotatingPhrase(LISTENING_PHRASES, phase === "listening", 1400);
+  const transcribingPhrase = useRotatingPhrase(TRANSCRIBING_PHRASES, phase === "transcribing", 1200);
 
   const reloadConversations = useCallback(async () => {
     const rows = await api.listConversations();
@@ -302,30 +307,13 @@ export default function CustomerPage() {
     resetPhase();
     setError("");
     setPhase("listening");
-    setStatusLine(listeningPhrase);
+    setStatusLine(`Recording for ${VOICE_RECORD_SECONDS} seconds…`);
+    setListenSecondsLeft(VOICE_RECORD_SECONDS);
 
     try {
       const convId = await ensureConversation();
-      let heard = "";
-
-      try {
-        const listenResult = await api.voiceListen();
-        heard = listenResult.heard.trim();
-      } catch {
-        setPhase("thinking");
-        setStatusLine("Using one-shot voice ask…");
-        const legacy = await api.askVoice({ conversationId: convId });
-        heard = legacy.heard;
-        setQuery("");
-        setPendingUser(heard);
-        if (legacy.conversation_id) {
-          await refreshAll(legacy.conversation_id);
-        }
-        setPendingUser(null);
-        setPhase("done");
-        setStatusLine("Done.");
-        return;
-      }
+      const listenResult = await api.voiceListen();
+      const heard = listenResult.heard.trim();
 
       if (!heard) {
         throw new Error("No speech heard. Try again and speak clearly.");
@@ -344,6 +332,8 @@ export default function CustomerPage() {
       setPhase("error");
       setError(formatApiError(err));
       setStatusLine("");
+    } finally {
+      setListenSecondsLeft(null);
     }
   };
 
@@ -353,7 +343,8 @@ export default function CustomerPage() {
     resetPhase();
     setError("");
     setPhase("listening");
-    setStatusLine(listeningPhrase);
+    setStatusLine(`Recording for ${VOICE_RECORD_SECONDS} seconds…`);
+    setListenSecondsLeft(VOICE_RECORD_SECONDS);
     try {
       const convId = await ensureConversation();
       const transcript = await listenOnce();
@@ -370,6 +361,8 @@ export default function CustomerPage() {
       setPhase("error");
       setError(formatApiError(err));
       setStatusLine("");
+    } finally {
+      setListenSecondsLeft(null);
     }
   };
 
@@ -379,11 +372,35 @@ export default function CustomerPage() {
   };
 
   useEffect(() => {
-    if (phase === "listening") setStatusLine(listeningPhrase);
-    if (phase === "thinking") setStatusLine(thinkingPhrase);
-  }, [phase, listeningPhrase, thinkingPhrase]);
+    if (phase !== "listening") {
+      return;
+    }
 
-  const voiceOverlayActive = phase === "listening";
+    const startedAt = Date.now();
+    setListenSecondsLeft(VOICE_RECORD_SECONDS);
+
+    const tick = () => {
+      const elapsedMs = Date.now() - startedAt;
+      const left = Math.max(0, VOICE_RECORD_SECONDS - Math.ceil(elapsedMs / 1000));
+      setListenSecondsLeft(left);
+      if (left <= 0) {
+        setPhase((current) => (current === "listening" ? "transcribing" : current));
+      }
+    };
+
+    tick();
+    const interval = window.setInterval(tick, 200);
+    return () => window.clearInterval(interval);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase === "listening") setStatusLine(listeningPhrase);
+    if (phase === "transcribing") setStatusLine(transcribingPhrase);
+    if (phase === "thinking") setStatusLine(thinkingPhrase);
+  }, [phase, listeningPhrase, transcribingPhrase, thinkingPhrase]);
+
+  const voiceOverlayActive = phase === "listening" || phase === "transcribing";
+  const voiceOverlayPhase = phase === "transcribing" ? "transcribing" : "listening";
 
   return (
     <div className={`customer-shell${voiceOverlayActive ? " customer-shell--voice" : ""}`}>
@@ -450,7 +467,11 @@ export default function CustomerPage() {
         </div>
 
         {voiceOverlayActive ? (
-          <VoiceOverlay phase="listening" statusLine={statusLine} />
+          <VoiceOverlay
+            phase={voiceOverlayPhase}
+            statusLine={statusLine}
+            secondsLeft={phase === "listening" ? listenSecondsLeft : null}
+          />
         ) : null}
       </div>
     </div>

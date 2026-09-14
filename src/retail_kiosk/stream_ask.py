@@ -152,6 +152,43 @@ def _stream_social_response(
             logger.exception("Failed to speak social intent response on UNO Q")
 
 
+def _accumulate_token_delta(data: str, accumulated: str) -> str:
+    try:
+        parsed = json.loads(data)
+    except json.JSONDecodeError:
+        return accumulated
+    delta = str(parsed.get("delta") or "")
+    return accumulated + delta if delta else accumulated
+
+
+def _emit_done_fallback(
+    catalog: ChunkCatalog,
+    *,
+    query: str,
+    answer: str,
+    conversation_id: str | None,
+    input_mode: str,
+    context_count: int | None = None,
+) -> bytes:
+    done_payload: dict[str, Any] = {
+        "query": query.strip(),
+        "answer": answer.strip(),
+        "model": None,
+        "context_count": context_count,
+        "sources": [],
+    }
+    done = _persist_done_event(
+        catalog,
+        query=query,
+        data=done_payload,
+        conversation_id=conversation_id,
+        input_mode=input_mode,
+    )
+    if done is not None:
+        return done
+    return _format_sse("done", done_payload)
+
+
 def _proxy_voice_stream(
     catalog: ChunkCatalog,
     *,
@@ -194,6 +231,8 @@ def _proxy_voice_stream(
     yield _stream_intent_event(intent)
 
     url = f"{proxy.rstrip('/')}/ask/stream"
+    accumulated = ""
+    done_sent = False
     try:
         response = requests.post(
             url,
@@ -217,7 +256,10 @@ def _proxy_voice_stream(
             blocks, pending = _iter_sse_blocks(pending)
             for block in blocks:
                 event_name, data = _parse_sse_event(block)
+                if event_name == "token":
+                    accumulated = _accumulate_token_delta(data, accumulated)
                 if event_name == "done":
+                    done_sent = True
                     done = _persist_done_event(
                         catalog,
                         query=query,
@@ -240,7 +282,10 @@ def _proxy_voice_stream(
 
         if pending.strip():
             event_name, data = _parse_sse_event(pending)
+            if event_name == "token":
+                accumulated = _accumulate_token_delta(data, accumulated)
             if event_name == "done":
+                done_sent = True
                 done = _persist_done_event(
                     catalog,
                     query=query,
@@ -252,8 +297,18 @@ def _proxy_voice_stream(
                     yield done
                 else:
                     yield pending.encode("utf-8")
-            else:
-                yield pending.encode("utf-8")
+                return
+            yield pending.encode("utf-8")
+
+        if not done_sent and accumulated.strip():
+            yield _emit_done_fallback(
+                catalog,
+                query=query,
+                answer=accumulated,
+                conversation_id=conversation_id,
+                input_mode=input_mode,
+                context_count=context_count,
+            )
     finally:
         response.close()
 
@@ -276,6 +331,8 @@ def _local_edge_stream(
     yield _stream_intent_event(intent)
 
     pending = ""
+    accumulated = ""
+    done_sent = False
     for chunk in sync.iter_answer_stream(
         query,
         top_k=top_k,
@@ -287,7 +344,10 @@ def _local_edge_stream(
         blocks, pending = _iter_sse_blocks(pending)
         for block in blocks:
             for event in iter_sse_events(block):
+                if event.event == "token":
+                    accumulated = _accumulate_token_delta(event.data, accumulated)
                 if event.event == "done":
+                    done_sent = True
                     parsed = parse_sse_json(event.data)
                     done = _persist_done_event(
                         catalog,
@@ -304,7 +364,10 @@ def _local_edge_stream(
                 yield _format_sse(event.event, event.data)
     if pending.strip():
         for event in iter_sse_events(pending):
+            if event.event == "token":
+                accumulated = _accumulate_token_delta(event.data, accumulated)
             if event.event == "done":
+                done_sent = True
                 done = _persist_done_event(
                     catalog,
                     query=query,
@@ -319,6 +382,15 @@ def _local_edge_stream(
                     yield _format_sse("done", parsed)
                 return
             yield _format_sse(event.event, event.data)
+
+    if not done_sent and accumulated.strip():
+        yield _emit_done_fallback(
+            catalog,
+            query=query,
+            answer=accumulated,
+            conversation_id=conversation_id,
+            input_mode=input_mode,
+        )
 
 
 def iter_ask_stream(
